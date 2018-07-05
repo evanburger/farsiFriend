@@ -9,7 +9,7 @@ Created on Mon Jul  2 16:45:31 2018
 
 import random
 
-__version__ = "v0.2.0"
+__version__ = "v0.3.0"
 
 # dataset for vocabulary. format is list of (English, Persian script, Persian pronunciaion) tuples
 vocab = [("water", "آب", "aab"), ("dog", "سگ", "sag"), ("life", "زندگی", "zendegi"), ("man", "مرد", "mard"), ("working", "کر کردن", "kaar kardan")]
@@ -28,11 +28,15 @@ def getSpecWord(words):
     index = random.randrange(2) # randomly select 0 or 1
     return index, words[index]
 
-def getInput(word):
+def getInput(index, word):
     '''getInput(string) --> string
     Print given string, then return string received as input
     '''
-    return input(f"What is the translation of {word}? ")
+    if index == 0:
+        language = "Finglish"
+    else:
+        language = "English"
+    return input(f"What is the {language} translation of {word}? ")
 
 def compareWords(userInput, actualWord):
     '''compareWords(string, string) --> None
@@ -47,7 +51,7 @@ def compareWords(userInput, actualWord):
 def main():
     words = getWords(vocab)
     index, word = getSpecWord(words)
-    userInput = getInput(word)
+    userInput = getInput(index, word)
     if userInput.lower()[0] == "q":
         quit() # quit if user enters something like quit
     if index == 0:
