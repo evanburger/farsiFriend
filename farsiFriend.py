@@ -9,7 +9,7 @@ Created on Mon Jul  2 16:45:31 2018
 
 import random
 
-__version__ = "v0.1.0"
+__version__ = "v0.2.0"
 
 # dataset for vocabulary. format is list of (English, Persian script, Persian pronunciaion) tuples
 vocab = [("water", "آب", "aab"), ("dog", "سگ", "sag"), ("life", "زندگی", "zendegi"), ("man", "مرد", "mard"), ("working", "کر کردن", "kaar kardan")]
@@ -39,13 +39,12 @@ def compareWords(userInput, actualWord):
     Print string depending on given strings, return None
     '''
     if userInput == actualWord:
-        print("You are correct!")
+        print("\nYou are correct!\n")
     else:
-        print(f'Sorry, that is wrong. It\'s actually "{actualWord}"')
+        print(f'\nSorry, that is wrong. It\'s actually "{actualWord}"\n')
 
 # define main function
 def main():
-    print("Enter 'quit' to exit")
     words = getWords(vocab)
     index, word = getSpecWord(words)
     userInput = getInput(word)
@@ -58,6 +57,11 @@ def main():
     compareWords(userInput, actualWord)
     main()
 
-# call main function
+# print initial message, then call main function
 if __name__ == "__main__":
+    print(
+'''\nWelcome to FarsiFriend!
+Enter the respective translations to the prompts to see if you're correct.
+Enter 'quit' to exit.
+    ''')
     main()
