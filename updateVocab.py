@@ -11,13 +11,18 @@ Created on Mon Aug 12 21:53:00 2018
 # ==============================================================================
 # NOTES
 # 
+# TO DO
+# 
+# make all inputs lowercase before adding to lists in order to allow for mixed case user inputs
+# allow for more than 4 word inputs
 # ==============================================================================
 
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 import logging
+import sys
 
 import pymysql as sql
 
@@ -25,9 +30,19 @@ import pymysql as sql
 DB = 'PersianVocabulary'
 USER = 'root'
 
+#  The set logging level is based on sys arguments. There's also an argument for help.
+if (sys.argv[1] == "--help" or sys.argv[1] == "-h"):
+    print("""python updateVocab.py [-h | -d | -f]
+Optional arguments:
+--help, -h      Display optional arguments
+--debug, -d     Run program with all logging displayed
+--full, -f      Run program with only errors displayed""")
+    quit()
 
-logging.basicConfig(level=logging.DEBUG)
-
+elif (sys.argv[1] == "--debug" or sys.argv[1] == "-d"):
+    logging.basicConfig(level=logging.DEBUG)
+elif (sys.argv[1] == "--full" or sys.argv[1] == "-f"):
+    logging.basicConfig(level=logging.ERROR)
 
 def getInput():
     logging.debug("getInput started")
