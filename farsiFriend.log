@@ -1592,3 +1592,18 @@
 2018-07-16 20:47:05,303 - INFO     - getInput ended
 2018-07-16 20:47:09,451 - DEBUG    - userInput var: {userInput}
 2018-07-16 20:47:09,451 - INFO     - farsiFriend.py exited
+2018-07-17 15:12:17,565 - INFO     - farsiFriend.py started
+2018-07-17 15:12:17,566 - INFO     - main loop started
+2018-07-17 15:12:17,567 - DEBUG    - vocab var at start of main: [('water', 'آب', 'aab'), ('dog', 'سگ', 'sag'), ('life', 'زندگی', 'zendegi'), ('man', 'مرد', 'mard'), ('working', 'کار کردن', 'kaar kardan'), ('sanctifying', 'تقدیس کردن', 'moqadis kardan'), ('accusation', 'اتهام', 'etehaam'), ('quality', 'کیفیت', 'kifit'), ('reputation', 'شهرت', 'shorat'), ('esteem', 'احترام', None), ('endurance', 'تحمل', None)]
+2018-07-17 15:12:17,567 - INFO     - getWords started
+2018-07-17 15:12:17,568 - DEBUG    - randNumber : 6.659154485321436
+2018-07-17 15:12:17,568 - DEBUG    - randNumber as int : 7
+2018-07-17 15:12:17,568 - INFO     - getWords ended
+2018-07-17 15:12:17,569 - DEBUG    - words var: ('quality', 'کیفیت', 'kifit')
+2018-07-17 15:12:17,569 - INFO     - getSpecWord started
+2018-07-17 15:12:17,569 - INFO     - getSpecWord ended
+2018-07-17 15:12:17,569 - DEBUG    - index, word vars: 1, کیفیت
+2018-07-17 15:12:17,570 - INFO     - getInput started
+2018-07-17 15:12:17,570 - INFO     - getInput ended
+2018-07-17 15:12:40,536 - DEBUG    - userInput var: {userInput}
+2018-07-17 15:12:40,536 - INFO     - farsiFriend.py exited

@@ -26,7 +26,7 @@ import logging
 
 #  set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 fileHandler = logging.FileHandler("farsiFriend.log")
 fileHandler.setLevel(logging.DEBUG)
