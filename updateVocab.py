@@ -13,11 +13,10 @@ Created on Mon Aug 12 21:53:00 2018
 # 
 # TO DO
 # 
-# allow for more than 4 word inputs
 # ==============================================================================
 
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 import logging
@@ -46,11 +45,50 @@ try:
 except IndexError: # This exception occurs when no sys arguments are given.
     logging.basicConfig(level=logging.INFO)
 
+
+class InputTypeError(TypeError):
+    """This error is to be raised when input made by the user doesn't meet the requirements of the program."""
+
+
 def getInput():
+
     logging.debug("getInput started")
     userInput = input("Enter English, Finglish, Persian, and type seperated by a space: ").lower()
+
+    if userInput == 'q':
+        print("Update Vocab exited")
+        quit()
+    elif userInput == "":
+        userList, repeat = None, False
+        logging.info(f"repeat = {repeat}")
+        return (userList, repeat)
+    userList = userInput.split(" ")
+    logging.info(f"userList = {userList}")
+
+    #  Check to see if there are compound verbs.
+    try:
+        if len(userList) == 4: #  This is the usual case, so no action is required.
+            logging.info("userList length = 4")
+        elif len(userList) == 5: #  This occurs when two English words translate to one Persian word.
+            logging.info("userList length = 4")
+            userList = [f"{userList[0]} {userList[1]}", userList[2], userList[3], userList[4]]
+        elif len(userList) == 6: #  This occurs when one English word translates to two words in Persian.
+            logging.info("userList length = 4")
+            userList = [userList[0], f"{userList[1]} {userList[2]}", f"{userList[3]} {userList[4]}", userList[5]]
+        elif len(userList) == 7: #  This occurs when two English words translate to two words in Persian.
+            logging.info("userList length = 4")
+            userList = [f"{userList[0]} {userList[1]}", f"{userList[2]} {userList[3]}", f"{userList[4]} {userList[5]}", userList[6]]
+        else:
+            raise InputTypeError
+    except InputTypeError as error:
+        logging.error(error)
+        logging.error(f"InputTypeError: only {len(userList)} words entered, 4, 6 or 7 expected")
+        getInput()
+
     logging.debug("getInput ended")
-    return userInput
+    repeat = True
+    logging.info(f"repeat = {repeat}")
+    return (userList, repeat)
 
 def storeInput(data, userList):
     logging.debug("storeInput started")
@@ -96,25 +134,15 @@ This program is an interface to add entries into the PersianVocabulary database.
 Enter words as directed. Press enter with nothing entred to save the words. Enter q to exit.
 """)
     logging.debug("main started")
-    userInput = getInput()
-    logging.info(f"userInput = {userInput}")
-    if userInput == 'q':
-        print("Update Vocab exited")
-        quit()
-    userList = userInput.split(" ")
-    logging.info(f"userList = {userList}")
+    userList, repeat = getInput()
+    
     data = []
 
-    while userInput != "":
+    while repeat:
         data = storeInput(data, userList)
         logging.info(f"data = {data}")
-        userInput = getInput()
-        logging.info(f"userInput = {userInput}")
-        if userInput == 'q':
-            print("Update Vocab exited")
-            quit()
-        userList = userInput.split(" ")
-        logging.info(f"userList = {userList}")
+        userList, repeat = getInput()
+
     updateVocab(data, DB, USER)
 
     print("""Update successful
