@@ -31,18 +31,21 @@ DB = 'PersianVocabulary'
 USER = 'root'
 
 #  The set logging level is based on sys arguments. There's also an argument for help.
-if (sys.argv[1] == "--help" or sys.argv[1] == "-h"):
-    print("""python updateVocab.py [-h | -d | -f]
-Optional arguments:
---help, -h      Display optional arguments
---debug, -d     Run program with all logging displayed
---full, -f      Run program with only errors displayed""")
-    quit()
+try:
+    if (sys.argv[1] == "--help" or sys.argv[1] == "-h"):
+        print("""python updateVocab.py [-h | -d | -f]
+    Optional arguments:
+    --help, -h      Display optional arguments
+    --debug, -d     Run program with all logging displayed
+    --full, -f      Run program with only errors displayed""")
+        quit()
 
-elif (sys.argv[1] == "--debug" or sys.argv[1] == "-d"):
-    logging.basicConfig(level=logging.DEBUG)
-elif (sys.argv[1] == "--full" or sys.argv[1] == "-f"):
-    logging.basicConfig(level=logging.ERROR)
+    elif (sys.argv[1] == "--debug" or sys.argv[1] == "-d"):
+        logging.basicConfig(level=logging.DEBUG)
+    elif (sys.argv[1] == "--full" or sys.argv[1] == "-f"):
+        logging.basicConfig(level=logging.ERROR)
+except IndexError: # This exception occurs when no sys arguments are given.
+    logging.basicConfig(level=logging.INFO)
 
 def getInput():
     logging.debug("getInput started")
