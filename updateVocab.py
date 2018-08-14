@@ -13,7 +13,6 @@ Created on Mon Aug 12 21:53:00 2018
 # 
 # TO DO
 # 
-# make all inputs lowercase before adding to lists in order to allow for mixed case user inputs
 # allow for more than 4 word inputs
 # ==============================================================================
 
@@ -49,7 +48,7 @@ except IndexError: # This exception occurs when no sys arguments are given.
 
 def getInput():
     logging.debug("getInput started")
-    userInput = input("Enter English, Finglish, Persian, and type seperated by a space: ")
+    userInput = input("Enter English, Finglish, Persian, and type seperated by a space: ").lower()
     logging.debug("getInput ended")
     return userInput
 
