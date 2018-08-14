@@ -87,7 +87,12 @@ def updateVocab(data, DB, USER):
 
 
 def main():
+    print("""
+Update Vocab
+This program is an interface to add entries into the PersianVocabulary database.
 
+Enter words as directed. Press enter with nothing entred to save the words. Enter q to exit.
+""")
     logging.debug("main started")
     userInput = getInput()
     logging.info(f"userInput = {userInput}")
