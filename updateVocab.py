@@ -16,11 +16,13 @@ Created on Mon Aug 12 21:53:00 2018
 # ==============================================================================
 
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 
 import logging
 import sys
+import os
+from datetime import datetime
 
 import pymysql as sql
 
@@ -28,7 +30,22 @@ import pymysql as sql
 DB = 'PersianVocabulary'
 USER = 'root'
 
-#  The set logging level is based on sys arguments. There's also an argument for help.
+#  The fileHandler writes info and above to a file while the streamHandler writes to the console.
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+logFilePath = f"./logs/updateVocab_{str(datetime.now())}.log"
+os.makedirs(os.path.dirname(logFilePath), exist_ok=True) #  This makes a logs directory if there isn't one.
+fileHandler = logging.FileHandler(logFilePath)
+fileHandler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)-12s - %(levelname)-8s - %(message)s")
+fileHandler.setFormatter(formatter)
+logger.addHandler(fileHandler)
+
+streamHandler = logging.StreamHandler()
+streamHandler.setFormatter(formatter)
+
+#  The system arguments set the level of the streamHandler or displays optional sys arugments.
 try:
     if (sys.argv[1] == "--help" or sys.argv[1] == "-h"):
         print("""python updateVocab.py [-h | -d | -f]
@@ -39,11 +56,13 @@ try:
         quit()
 
     elif (sys.argv[1] == "--debug" or sys.argv[1] == "-d"):
-        logging.basicConfig(level=logging.DEBUG)
+        streamHandler.setLevel(logging.DEBUG)
     elif (sys.argv[1] == "--full" or sys.argv[1] == "-f"):
-        logging.basicConfig(level=logging.ERROR)
-except IndexError: # This exception occurs when no sys arguments are given.
-    logging.basicConfig(level=logging.INFO)
+        streamHandler.setLevel(logging.CRITICAL)
+except IndexError: #  This exception occurs when no sys arguments are given.
+    streamHandler.setLevel(logging.INFO)
+
+logger.addHandler(streamHandler)
 
 
 class InputTypeError(TypeError):
@@ -52,7 +71,7 @@ class InputTypeError(TypeError):
 
 def getInput():
 
-    logging.debug("getInput started")
+    logger.debug("getInput started")
     userInput = input("Enter English, Finglish, Persian, and type seperated by a space: ").lower()
 
     if userInput == 'q':
@@ -60,51 +79,51 @@ def getInput():
         quit()
     elif userInput == "":
         userList, repeat = None, False
-        logging.info(f"repeat = {repeat}")
+        logger.info(f"repeat = {repeat}")
         return (userList, repeat)
     userList = userInput.split(" ")
-    logging.info(f"userList = {userList}")
+    logger.info(f"userList = {userList}")
 
     #  Check to see if there are compound verbs.
     try:
         if len(userList) == 4: #  This is the usual case, so no action is required.
-            logging.info("userList length = 4")
+            logger.info("userList length = 4")
         elif len(userList) == 5: #  This occurs when two English words translate to one Persian word.
-            logging.info("userList length = 4")
+            logger.info("userList length = 4")
             userList = [f"{userList[0]} {userList[1]}", userList[2], userList[3], userList[4]]
         elif len(userList) == 6: #  This occurs when one English word translates to two words in Persian.
-            logging.info("userList length = 4")
+            logger.info("userList length = 4")
             userList = [userList[0], f"{userList[1]} {userList[2]}", f"{userList[3]} {userList[4]}", userList[5]]
         elif len(userList) == 7: #  This occurs when two English words translate to two words in Persian.
-            logging.info("userList length = 4")
+            logger.info("userList length = 4")
             userList = [f"{userList[0]} {userList[1]}", f"{userList[2]} {userList[3]}", f"{userList[4]} {userList[5]}", userList[6]]
         else:
             raise InputTypeError
     except InputTypeError as error:
-        logging.error(error)
-        logging.error(f"InputTypeError: only {len(userList)} words entered, 4, 6 or 7 expected")
+        logger.error(error)
+        logger.error(f"InputTypeError: only {len(userList)} words entered, 4, 6 or 7 expected")
         getInput()
 
-    logging.debug("getInput ended")
+    logger.debug("getInput ended")
     repeat = True
-    logging.info(f"repeat = {repeat}")
+    logger.info(f"repeat = {repeat}")
     return (userList, repeat)
 
 def storeInput(data, userList):
-    logging.debug("storeInput started")
+    logger.debug("storeInput started")
     data.append(tuple(userList))
-    logging.debug("storeInput ended")
+    logger.debug("storeInput ended")
     return data
 
 def getPassword():
-    logging.debug("getPassword started")
+    logger.debug("getPassword started")
     password = input("Enter the password for the database: ")
-    logging.debug("getPassword ended")
+    logger.debug("getPassword ended")
     return password
 
 def updateVocab(data, DB, USER):
 
-    logging.debug("updateVocab started")
+    logger.debug("updateVocab started")
     password = getPassword()
     conn = sql.connect(db=DB, user=USER, password=password)
     del password
@@ -112,18 +131,18 @@ def updateVocab(data, DB, USER):
 
     queries = []
     for datum in data:
-        logging.info(f"datum = {datum}")
+        logger.info(f"datum = {datum}")
         queries.append("INSERT INTO words VALUES (%s, %s, %s, %s, NULL);")
-        logging.info(f"queries = {queries}")
+        logger.info(f"queries = {queries}")
     for query, datum in zip(queries, data):
-        logging.info(f"query = {query}")
-        logging.info(f"datum = {datum}")
+        logger.info(f"query = {query}")
+        logger.info(f"datum = {datum}")
         c.execute(query, datum) #  Inputs are sanitized
-        logging.debug("query executed")
+        logger.debug("query executed")
 
     conn.commit()
     conn.close()
-    logging.debug("updateVocab ended")
+    logger.debug("updateVocab ended")
 
 
 def main():
@@ -133,14 +152,14 @@ This program is an interface to add entries into the PersianVocabulary database.
 
 Enter words as directed. Press enter with nothing entred to save the words. Enter q to exit.
 """)
-    logging.debug("main started")
+    logger.debug("main started")
     userList, repeat = getInput()
     
     data = []
 
     while repeat:
         data = storeInput(data, userList)
-        logging.info(f"data = {data}")
+        logger.info(f"data = {data}")
         userList, repeat = getInput()
 
     updateVocab(data, DB, USER)
