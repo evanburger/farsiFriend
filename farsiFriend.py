@@ -17,18 +17,30 @@ Created on Mon Jul  2 16:45:31 2018
 # ==============================================================================
 
 
-__version__ = "v0.4.0"
+__version__ = "0.5.0"
 
 
 import random
 import logging
 
+import pymysql as sql
+
+
+DB = "PersianVocabulary"
+USER = "root"
+#  dataset for vocabulary. format is list of
+#  (English, Persian script, Persian pronunciaion) tuples
+conn = sql.connect(db = DB, user=USER, password="")
+c = conn.cursor()
+c.execute("SELECT english, persian, finglish FROM words;")
+VOCAB = [record for record in c.fetchall()]
+conn.close()
 
 #  set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
-fileHandler = logging.FileHandler("farsiFriend.log")
+fileHandler = logging.FileHandler("./logs/farsiFriend.log")
 fileHandler.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)-12s - %(levelname)-8s - %(message)s")
 fileHandler.setFormatter(formatter)
@@ -36,22 +48,8 @@ logger.addHandler(fileHandler)
 
 streamHandler = logging.StreamHandler()
 streamHandler.setFormatter(formatter)
-streamHandler.setLevel(logging.DEBUG)
+streamHandler.setLevel(logging.INFO)
 logger.addHandler(streamHandler)
-
-#  dataset for vocabulary. format is list of
-#  (English, Persian script, Persian pronunciaion) tuples
-vocab = [("water", "آب", "aab"),
-         ("dog", "سگ", "sag"),
-         ("life", "زندگی", "zendegi"),
-         ("man", "مرد", "mard"),
-         ("working", "کار کردن", "kaar kardan"),
-         ("sanctifying", "تقدیس کردن", "moqadis kardan"),
-         ("accusation", "اتهام", "etehaam"),
-         ("quality", "کیفیت", "kifit"),
-         ("reputation", "شهرت", "shorat"),
-         ("esteem", "احترام", None),
-         ("endurance", "تحمل", None)]
 
 
 #  define functions
@@ -152,6 +150,6 @@ if __name__ == "__main__":
     Enter the respective translations to the prompts to see if you're correct.
     Enter 'q' to exit.
     ''')
-    main(vocab)
+    main(VOCAB)
 else:
     logger.warning("This file is not intended to be imported")
