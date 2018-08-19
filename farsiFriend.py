@@ -8,16 +8,11 @@ Created on Mon Jul  2 16:45:31 2018
 """
 
 # ==============================================================================
-# NOTES
-# BUG - If IndexError thrown even once, the vocab.pop(randNumber) line
-# in getWords always returns a NoneType even if during that iteration of main
-# the randNumber is within the index range of the vocab list. Turning that line off
-# and setting randNumber to a constant number fixes the bug. The bug is also
-# fixed by calling main in the except block of getWords
+# TO DO
 # ==============================================================================
 
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 
 import random
@@ -26,15 +21,10 @@ import logging
 import pymysql as sql
 
 
-DB = "PersianVocabulary"
+DB = "FarsiFriend"
 USER = "root"
-#  dataset for vocabulary. format is list of
-#  (English, Persian script, Persian pronunciaion) tuples
-conn = sql.connect(db = DB, user=USER, password="")
-c = conn.cursor()
-c.execute("SELECT english, persian, finglish FROM words;")
-VOCAB = [record for record in c.fetchall()]
-conn.close()
+PASSWORD = ""
+
 
 #  set up logging
 logger = logging.getLogger(__name__)
@@ -48,7 +38,7 @@ logger.addHandler(fileHandler)
 
 streamHandler = logging.StreamHandler()
 streamHandler.setFormatter(formatter)
-streamHandler.setLevel(logging.INFO)
+streamHandler.setLevel(logging.WARNING)
 logger.addHandler(streamHandler)
 
 
@@ -65,12 +55,13 @@ def getWords(vocab):
     randNumber = int(round(randNumber))
     logger.debug(f"randNumber as int : {randNumber}")
     try:
-        words = vocab.pop(randNumber)  # BUG - words var is None on second pass of program
+        words = vocab.pop(randNumber)
         logger.info("getWords ended")
         return words
     except IndexError as err:
         logger.warning(err)
-        main(vocab)
+        loggedIn = True
+        main(loggedIn)
 
 
 def getSpecWord(words):
@@ -109,38 +100,167 @@ def compareWords(userInput, actualWord, vocab, words):
         vocab.append(words)
         logger.info(f"words var {words} appended at end of vocab var")
     else:
-        print(f'\nSorry, that is wrong. It\'s actually "{actualWord}"\n')
+        print(f'\nSorry, that is wrong. It\'s actually "{actualWord}" ({words[1]}).\n')
         #  insert words at beginning of vocab to increase probabilty
         vocab.insert(0, words)
         logger.info(f"words var {words} inserted at beginning of vocab var")
     logger.info("compareWords ended")
     return vocab
 
+def logIn():
+    
+    logger.info("logIn started")
+    conn = sql.connect(db=DB, user=USER, password=PASSWORD)
+    c = conn.cursor()
+
+    username = input("Enter your username: ")
+    logger.debug(f"username = {username}")
+    if username.lower() == 'q':
+        quit()
+    c.execute("SELECT username FROM users WHERE username = %s;", (username,))
+    logger.info("SELECT query executed")
+    while c.fetchone() is None:
+        username = input("No such username exists. Try again: ")
+        logger.debug(f"username = {username}")
+        if username.lower() == 'q':
+            quit()
+        c.execute("SELECT username FROM users WHERE username = %s;", (username,))
+        logger.info("SELECT query executed")
+
+    userPassword = input("Enter your password: ")
+    logger.debug(f"userPassword = {userPassword}")
+    if userPassword.lower() == 'q':
+        quit()
+    c.execute("SELECT password FROM users WHERE username = %s;", (username,))
+    logger.info("SELECT query executed")
+    while userPassword != c.fetchone()[0]:
+        userPassword = input("Password is incorrect. Try again: ")
+        logger.debug(f"userPassword = {userPassword}")
+        if userPassword.lower() == 'q':
+            quit()
+        c.execute("SELECT password FROM users WHERE username = %s;", (username,))
+        logger.info("SELECT query executed")
+
+    #  This point is only reached if the username entered exists in the DB and the password entered matches the DB's one.
+    userID = c.execute("SELECT user_ID FROM users WHERE username = %s;", (username,))
+    conn.close()
+    logger.info("logIn ended")
+    return userID
+
+def loadVocab(userID):
+    
+    logger.info("loadVocab started")
+    conn = sql.connect(db = DB, user=USER, password=PASSWORD)
+    c = conn.cursor()
+    
+    #  The user_words table must be wipped to allow for a refresh of words that the user knows.
+    c.execute("DELETE FROM user_words WHERE user_ID = %s;", (userID,))
+    c.execute("INSERT INTO user_words SELECT NULL, %s, word_ID FROM words;", (userID,))
+
+    c.execute("SELECT word_ID FROM user_words WHERE user_ID = %s;", (userID,))
+    logger.info("SELECT query executed")
+    wordIDList = c.fetchall()
+    logger.debug(f"wordIDList = {wordIDList}")
+
+    vocab = []
+    for wordID in wordIDList:
+        c.execute("SELECT english, persian, finglish, word_ID FROM words WHERE word_ID = %s;", (wordID))
+    #  Vocab must be made into a list of tuples to allow reordering later on.
+        vocab.append(c.fetchone())
+    logger.debug(f"vocab = {vocab}")
+
+    conn.close()
+    logger.info("loadVocab ended")
+    return vocab
+
+def register():
+    
+    logger.info("register started")
+    conn = sql.connect(db = DB, user=USER, password=PASSWORD)
+    c = conn.cursor()
+
+    username = input("Enter a username (up to 32 characters): ")
+    logger.debug(f"username = {username}")
+    if username.lower() == 'q':
+        quit()
+    password = input("Enter a password (up to 32 characters): ")
+    logger.debug(f"password = {password}")
+    if password.lower() == 'q':
+        quit()
+    confirmedPassword = input("Enter password again to confirm: ")
+    logger.debug(f"confirmedPassword = {confirmedPassword}")
+    if confirmedPassword.lower() == 'q':
+        quit()
+    
+    if password != confirmedPassword:
+        print("Passwords don't match. Try again.")
+        conn.close()
+        register()
+
+    c.execute("INSERT INTO users VALUES (NULL, %s, %s);", (username, password))
+    logger.info("Insert query executed")
+    conn.commit()
+    conn.close()
+    logger.info("register ended")
+
+def quitApp(userID, words):
+    if userID == 1:
+        quit()
+    else: #  This is to save the state of the user's session to the DB.
+        conn = sql.connect(db=DB, user=USER, password=PASSWORD)
+        c = conn.cursor()
+        c.execute("DELETE FROM user_words WHERE user_ID = %s;", (userID,))
+        logger.info("DELETE query executed")
+        for words in vocab:
+            c.execute("INSERT INTO user_words VALUES (NULL, %s, %s);", (userID, words[3]))
+        logger.info("INSERT queries executed")
+        conn.commit()
+        conn.close()
+        logger.info("farsiFriend.py exited")
+        quit()
 
 # define main function
-def main(vocab):
-    logger.info("main loop started")
-    logger.debug(f"vocab var at start of main: {vocab}")
-    words = getWords(vocab)
-    logger.debug(f"words var: {words}")
-    index, word = getSpecWord(words)
-    logger.debug(f"index, word vars: {index}, {word}")
-    userInput = getInput(index, word)
-    logger.debug("userInput var: {userInput}")
-    if userInput.lower() == "q":
-        logger.info("farsiFriend.py exited")
-        quit()  # quit if user enters something like quit
-    if index == 0:
-        #  User to input Persian pron if given English word
-        actualWord = words[2]
+def main(loggedIn):
+    
+    if not loggedIn:
+        while True:
+            userLoggingIn = input("Log in or register? (l / r): ")
+            if userLoggingIn.lower() == 'q':
+                quit()
+            elif userLoggingIn.lower() == 'l':
+                break
+            elif userLoggingIn.lower() == 'r':
+                register()
+                break
+
+        global userID
+        userID = logIn()
+        global vocab
+        vocab = loadVocab(userID)
+
     else:
-        #  User to input English word if given Persian script
-        actualWord = words[0]
-    logger.debug(f"actualWord var: {actualWord}")
-    vocab = compareWords(userInput, actualWord, vocab, words)
-    logger.debug(f"vocab var at end of main: {vocab}")
-    logger.info("main loop ended")
-    main(vocab)
+        logger.info("main loop started")
+        words = getWords(vocab)
+        logger.debug(f"words var: {words}")
+        index, word = getSpecWord(words)
+        logger.debug(f"index, word vars: {index}, {word}")
+        userInput = getInput(index, word)
+        logger.debug(f"userInput var: {userInput}")
+        if userInput.lower() == "q":
+            quitApp(userID, words)
+        if index == 0:
+            #  User to input Persian pron if given English word
+            actualWord = words[2]
+        else:
+            #  User to input English word if given Persian script
+            actualWord = words[0]
+        logger.debug(f"actualWord var: {actualWord}")
+        vocab = compareWords(userInput, actualWord, vocab, words)
+        logger.debug(f"vocab var at end of main: {vocab}")
+        logger.info("main loop ended")
+        
+    loggedIn = True
+    main(loggedIn)
 
 
 # print initial message, then call main function
@@ -150,6 +270,7 @@ if __name__ == "__main__":
     Enter the respective translations to the prompts to see if you're correct.
     Enter 'q' to exit.
     ''')
-    main(VOCAB)
+    loggedIn = False
+    main(loggedIn)
 else:
     logger.warning("This file is not intended to be imported")
