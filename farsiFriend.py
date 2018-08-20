@@ -9,6 +9,9 @@ Created on Mon Jul  2 16:45:31 2018
 
 # ==============================================================================
 # TO DO
+# Hide passwords upon entry
+# Hash salted passwords for user accounts
+# state what type of word it is to help disambiguate
 # ==============================================================================
 
 
@@ -17,13 +20,15 @@ __version__ = "0.6.0"
 
 import random
 import logging
+import getpass
 
 import pymysql as sql
+import passlib.hash
+
+import sensitiveData
 
 
 DB = "FarsiFriend"
-USER = "root"
-PASSWORD = ""
 
 
 #  set up logging
@@ -110,7 +115,7 @@ def compareWords(userInput, actualWord, vocab, words):
 def logIn():
     
     logger.info("logIn started")
-    conn = sql.connect(db=DB, user=USER, password=PASSWORD)
+    conn = sql.connect(db=DB, user=sensitiveData.USER, password=sensitiveData.PASSWORD)
     c = conn.cursor()
 
     username = input("Enter your username: ")
@@ -127,16 +132,16 @@ def logIn():
         c.execute("SELECT username FROM users WHERE username = %s;", (username,))
         logger.info("SELECT query executed")
 
-    userPassword = input("Enter your password: ")
-    logger.debug(f"userPassword = {userPassword}")
-    if userPassword.lower() == 'q':
+    userPassword = getpass.getpass("Enter your password (will not appear on screen): ")
+    if userPassword.lower() == "q":
+        del userPassword
         quit()
     c.execute("SELECT password FROM users WHERE username = %s;", (username,))
     logger.info("SELECT query executed")
-    while userPassword != c.fetchone()[0]:
-        userPassword = input("Password is incorrect. Try again: ")
-        logger.debug(f"userPassword = {userPassword}")
-        if userPassword.lower() == 'q':
+    while not passlib.hash.sha256_crypt.verify(userPassword, c.fetchone()[0]):
+        userPassword = getpass.getpass("Password is incorrect. Try again: ")
+        if userPassword.lower() == "q":
+            del userPassword
             quit()
         c.execute("SELECT password FROM users WHERE username = %s;", (username,))
         logger.info("SELECT query executed")
@@ -150,7 +155,7 @@ def logIn():
 def loadVocab(userID):
     
     logger.info("loadVocab started")
-    conn = sql.connect(db = DB, user=USER, password=PASSWORD)
+    conn = sql.connect(db = DB, user=sensitiveData.USER, password=sensitiveData.PASSWORD)
     c = conn.cursor()
     
     #  The user_words table must be wipped to allow for a refresh of words that the user knows.
@@ -176,26 +181,30 @@ def loadVocab(userID):
 def register():
     
     logger.info("register started")
-    conn = sql.connect(db = DB, user=USER, password=PASSWORD)
+    conn = sql.connect(db = DB, user=sensitiveData.USER, password=sensitiveData.PASSWORD)
     c = conn.cursor()
 
     username = input("Enter a username (up to 32 characters): ")
     logger.debug(f"username = {username}")
     if username.lower() == 'q':
         quit()
-    password = input("Enter a password (up to 32 characters): ")
-    logger.debug(f"password = {password}")
-    if password.lower() == 'q':
+    password = getpass.getpass("Enter a password [up to 32 characters] (will not appear on screen): ")
+    if password.lower() == "q":
+        del password
         quit()
-    confirmedPassword = input("Enter password again to confirm: ")
-    logger.debug(f"confirmedPassword = {confirmedPassword}")
-    if confirmedPassword.lower() == 'q':
+    
+    confirmedPassword = getpass.getpass("Enter password again to confirm: ")
+    if confirmedPassword.lower() == "q":
+        del confirmedPassword
         quit()
     
     if password != confirmedPassword:
         print("Passwords don't match. Try again.")
         conn.close()
         register()
+
+    password = passlib.hash.sha256_crypt.encrypt(password)
+    logger.debug(f"password = {password}")
 
     c.execute("INSERT INTO users VALUES (NULL, %s, %s);", (username, password))
     logger.info("Insert query executed")
@@ -207,7 +216,7 @@ def quitApp(userID, words):
     if userID == 1:
         quit()
     else: #  This is to save the state of the user's session to the DB.
-        conn = sql.connect(db=DB, user=USER, password=PASSWORD)
+        conn = sql.connect(db=DB, user=sensitiveData.USER, password=sensitiveData.PASSWORD)
         c = conn.cursor()
         c.execute("DELETE FROM user_words WHERE user_ID = %s;", (userID,))
         logger.info("DELETE query executed")
@@ -223,7 +232,7 @@ def quitApp(userID, words):
 def main(loggedIn):
     
     if not loggedIn:
-        while True:
+        while True: #  This block loops unitl q, l or r is entered.
             userLoggingIn = input("Log in or register? (l / r): ")
             if userLoggingIn.lower() == 'q':
                 quit()
