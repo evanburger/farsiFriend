@@ -23,6 +23,7 @@ import logging
 import sys
 import os
 from datetime import datetime
+import getpass
 
 import pymysql as sql
 
@@ -152,7 +153,7 @@ def storeInput(data, userList):
 
 def getPassword():
     logger.debug("getPassword started")
-    password = input("Enter the password for the database: ")
+    password = getpass.getpass("Enter the password for the database (will not appear on screen): ")
     logger.debug("getPassword ended")
     return password
 
